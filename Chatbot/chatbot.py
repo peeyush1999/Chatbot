@@ -5,6 +5,8 @@ import webbrowser
 from bs4 import BeautifulSoup
 import re
 
+zomato_api = '42ba61672c6ec3b77ba9f6a8e44970f7'
+
 class Travis:
     def fetch_data(self,url):
         headers = {'User-Agent': 'Mozilla/5.0'}
@@ -259,10 +261,68 @@ def how_to_reach(location):
     print(summary[1].text)
     return summary[1].text
 
+'''===================================================Restaurants Near Me======================='''
+def get_location_details(query):
+
+    headers = {
+        'Accept': 'application/json',
+        'user-key': zomato_api,
+    }
+    params = (
+        ('query', query),
+    )
+
+    response = requests.get('https://developers.zomato.com/api/v2.1/locations', headers=headers, params=params)
+    data = response.json()
+
+    for loc in data['location_suggestions']:
+        loc_id = loc['entity_id']
+        loc_type = loc['entity_type']
+
+    return loc_id, loc_type
+
+
+def get_restaurants(ent_id, ent_type):
+
+    headers = {
+        'Accept': 'application/json',
+        'user-key': zomato_api,
+    }
+
+    params = (
+        ('entity_id', ent_id),
+        ('entity_type', ent_type),
+    )
+
+    response = requests.get('https://developers.zomato.com/api/v2.1/search', headers=headers, params=params)
+
+    return response.json()
+
+
+def restaurants_near_me(location):
+    entity_id, entity_type = get_location_details(location)
+    data = get_restaurants(entity_id, entity_type)
+    result = ""
+    print("Restaurants in " + location.title() + " --\n")
+    i=0
+    for restaurant in data['restaurants']:
+        r = restaurant['restaurant']
+        print(r['name'].upper())
+        loc = r['location']
+        print(loc['locality'])
+        rating = r['user_rating']
+        print("Rating - " + str(rating['aggregate_rating']))
+    
+        result = result + ("<b>"+r['name'].upper()+"</b>" +"<br> "+loc['locality']+"<br>Rating - " + str(rating['aggregate_rating']) + "<br>")
+        if(i>7):
+            break
+        i+=1
+    return result
+'''
 def restaurants_near_me(location):
     query="zomato restaurant near "+location
     url=google(query)
-    # print(url)
+    print(url)
     soup=fetch_data(url)
     stores=soup.findAll('a',attrs={'data-result-type':'ResCard_Name'})
 
@@ -276,6 +336,11 @@ def restaurants_near_me(location):
             break
 
     return "Top Restaurants Near You \n" + result
+
+'''
+
+
+''' ==========================================restaurants Near Me End======================='''
         
 def hotels_near_me(location,stars):
     query="makemytrip "+str(stars)+" star hotels near "+location
@@ -378,8 +443,8 @@ t = Travis()
 #t.best_time_to_visit('haridwar')
 #t.current_temperature('hyderabad')
 #t.how_to_reach('auli')
-#restaurants_near_me("harki pauri")
-hotels_near_me("near harki pauri",3)
+#print(restaurants_near_me("harki pauri"))
+#hotels_near_me("near harki pauri",3)
 #nearest_railway_station("near qutub minar")
 #t.nearest_airport("moradabad")
 #book airticket
